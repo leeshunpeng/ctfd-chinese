@@ -32,6 +32,7 @@ CACHE_REDIS_URL = os.environ.get('REDIS_URL')
 
 4.安装好nginx
 5.在/etc/nginx/conf.d目录下添加ctfd.conf文件，内容如下
+<code>
 server {
     listen       80;
 
@@ -60,12 +61,14 @@ server {
         root html;
     }
 }
+</code>
 自行修改listen端口，日志输出路径等
 然后重启nginx
 
 6.修改ctfd.ini的参数值，优化uswgi
 
 7.创建名为ctfd_service.sh
+<code>
 #!/bin/bash
 ### BEGIN INIT INFO
 # Provides:          lsp
@@ -81,7 +84,7 @@ cd /home/aotu/CTFd
 uwsgi --ini ctfd.ini
 
 exit 0
-
+</code>
 8. 添加权限
 sudo chmod +x ctfd_service.sh
 
