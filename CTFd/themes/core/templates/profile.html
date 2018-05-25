@@ -1,0 +1,101 @@
+ {% extends "base.html" %}
+
+{% block stylesheets %}
+{% endblock %}
+
+{% block content %}
+<div class="jumbotron">
+	<div class="container">
+		<h1>个人信息</h1>
+	</div>
+</div>
+<div class="container">
+	<div class="row">
+		<div class="col-md-6 offset-md-3">
+			{% if success %}
+				<div class="alert alert-success alert-dismissable submit-row" role="alert">
+					<strong>操作成功!</strong>
+					你的个人信息已更新成功
+					<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">×</span></button>
+				</div>
+			{% else %}
+				{% for error in errors %}
+				<div class="submit-row">
+					<div class="alert alert-danger alert-dismissable" role="alert">
+					  <span class="sr-only">错误提示:</span>
+					  {{ error }}
+					  <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">×</span></button>
+				  </div>
+				</div>
+				{% endfor %}
+			{% endif %}
+			{% if confirm_email %}
+				<div class="alert alert-info alert-dismissable submit-row" role="alert">
+					您的账号还没有确认!
+					请检查你的邮件，并点击邮件中的超链接确认您的账号.
+					<br>
+					<br>
+					如果有重发确认邮件<a href="{{ request.script_root }}/confirm">点击 这里.</a>
+					<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span
+							aria-hidden="true">×</span></button>
+				</div>
+			{% endif %}
+			<form method="post" accept-charset="utf-8" autocomplete="off" role="form" class="form-horizontal">
+				<div class="form-group">
+					<label for="name-input">
+						用户名 或 队名
+					</label>
+					<input class="form-control" type="text" name="name" id="name-input" value="{{name}}"/>
+				</div>
+				<div class="form-group">
+					<label for="email-input">
+						邮箱
+					</label>
+					<input class="form-control" type="email" name="email" id="email-input" value="{{email}}"/>
+				</div>
+				<div class="form-group">
+					<label for="confirm-input">
+						当前密码
+					</label>
+					<input class="form-control" type="password" name="confirm" id="confirm-input" />
+				</div>
+				<div class="form-group">
+					<label for="password-input">
+						新密码
+					</label>
+					<input class="form-control" type="password" name="password" id="password-input" />
+				</div>
+
+				<hr>
+
+				<div class="form-group">
+					<label for="grade-input">
+						年级
+					</label>
+					<input class="form-control" type="text" name="grade" id="grade-input" value="{% if grade %}{{grade}}{% endif %}" />
+				</div>
+				<div class="form-group">
+					<label for="major-input">
+						专业
+					</label>
+					<input class="form-control" type="text" name="major" id="major-input" value="{% if major %}{{major}}{% endif %}" />
+				</div>
+				<div class="form-group">
+					<label for="college-input">
+						学院
+					</label>
+					<input class="form-control" type="text" name="college" id="college-input" value="{% if college %}{{college}}{% endif %}" />
+				</div>
+				<div class="form-group">
+					<button type="submit" id="submit" tabindex="5" class="btn btn-md btn-primary btn-outlined float-right">提交</button>
+				</div>
+				<input type="hidden" name="nonce" value="{{ nonce }}">
+			</form>
+		</div>
+	</div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+	<script src="{{ request.script_root }}/themes/{{ ctf_theme() }}/static/js/style.js"></script>
+{% endblock %}
