@@ -1,62 +1,100 @@
-![](https://github.com/CTFd/CTFd/blob/master/CTFd/themes/core/static/img/logo.png?raw=true)
-====
+本系统基于https://github.com/CTFd/CTFd 进行汉化，目前本系统版本为1.2.0
 
-[![Build Status](https://travis-ci.org/CTFd/CTFd.svg?branch=master)](https://travis-ci.org/CTFd/CTFd)
-[![CTFd Slack](https://slack.ctfd.io/badge.svg)](https://slack.ctfd.io/)
+改进点：
+1.对前端页面进行汉化；
+2.用户个人字段信息改为：年级/专业/学院。同时修改了用户列表的显示内容；
+3.挑战页面根据题目分类进行分块显示，同时显示各分类的题目总数和已完成数；
+4.优化挑战页面加载方式，由原来的全部加载，改为按分类异步加载；
+5.管理员后台的挑战题目添加分页功能。
+6.管理员后台的用户列表的显示内容也改为年级/专业/学院。
 
-## What is CTFd?
-CTFd is a Capture The Flag framework focusing on ease of use and customizability. It comes with everything you need to run a CTF and it's easy to customize with plugins and themes.
+部署方式：
+1.CTFd的配置文件，默认系统为ubuntu，如果使用其他系统，请自行修改prepare.sh文件
+2.执行./prepare.sh，下载相关包
+3.修改CTFd/config.py配置文件
+参考：https://github.com/CTFd/CTFd/wiki/Advanced-Deployment
 
-![CTFd is a CTF in a can.](https://github.com/CTFd/CTFd/blob/master/CTFd/themes/core/static/img/scoreboard.png?raw=true)
+主要配置有三个：
+#安全密钥
+#可以保持不变
+#可以执行"python -c "import os; print repr(os.urandom(32))" 生成一串密钥，然后赋值给SECRET_KEY
+SECRET_KEY = os.environ.get('SECRET_KEY') or key
+#SECRET_KEY = \********
 
-## Features
- * Create your own challenges, categories, hints, and flags from the Admin Interface
-    * Static & Regex based flags
-    * Users can unlock hints for free or with points
-    * File uploads to the server or [Amazon S3](https://github.com/CTFd/CTFd-S3-plugin)
-    * Limit challenge attempts & hide challenges
-    * Automatic submission throttling
- * Scoreboard with automatic tie resolution
-    * Hide Scores from the public
-    * Freeze Scores at a specific time
-    * [Dynamic Scoring](https://github.com/CTFd/DynamicValueChallenge)
- * Scoregraphs comparing the top 10 teams and team progress graphs
- * Markdown content management system
- * SMTP + Mailgun email support
-    * Email confirmation support
-    * Forgot password support
- * Automatic competition starting and ending
- * Team management & hiding
- * Customize everything using the [plugin](https://github.com/CTFd/CTFd/wiki/Plugins) and [theme](https://github.com/CTFd/CTFd/tree/master/CTFd/themes) interfaces
- * Importing and Exporting of CTF data for archival
- * And a lot more...
 
-## Install
- 1. Run `./prepare.sh` to install dependencies using apt.
- 2. Modify [CTFd/config.py](https://github.com/CTFd/CTFd/blob/master/CTFd/config.py) to your liking.
- 3. Use `python serve.py` in a terminal to drop into debug mode.
+#mysql数据库配置
+#SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'sqlite:///{}/ctfd.db'.format(os.path.dirname(os.path.abspath(__file__))) 
+SQLALCHEMY_DATABASE_URI = 'mysql+pymysql://root:123456@localhost/ctfd' #root为mysql用户名，123456为mysql密码
 
-Or you can use Docker with the following command:
+#redis配置 看代码貌似没有用
+#REDIS_URL = 'redis://:@localhost:6379' #新增这个变量的赋值
+CACHE_REDIS_URL = os.environ.get('REDIS_URL')
 
-`docker run -p 8000:8000 -it ctfd/ctfd`
+4.安装好nginx
+5.在/etc/nginx/conf.d目录下添加ctfd.conf文件，内容如下
+server {
+    listen       80;
 
- * [Here](https://github.com/CTFd/CTFd/wiki/Basic-Deployment) are some deployment options
- * You can check out the [Getting Started](https://github.com/CTFd/CTFd/wiki/Getting-Started) guide for a breakdown of some of the features you need to get started.
+    server_name localhost;
 
-## Live Demo
-https://demo.ctfd.io/
+    charset utf-8;
 
-## Support
-To get basic support, you can join the [CTFd Slack Community](https://slack.ctfd.io/): [![CTFd Slack](https://slack.ctfd.io/badge.svg)](https://slack.ctfd.io/)
+    client_max_body_size 100m;
 
-If you prefer commercial support or have a special project, send us an email: [support@ctfd.io](mailto:support@ctfd.io).
+    access_log  /var/log/nginx/ctfd.access.log  main;
 
-## Managed Hosting
-Looking to use CTFd but don't want to deal with managing infrastructure? Check out [the CTFd website](https://ctfd.io/) for managed CTFd deployments.
+    location ~ .*\.(js|css|woff|woff2|txt|png|jpg|jpeg)$ {
+        include uwsgi_params;
+        uwsgi_pass unix:/tmp/uwsgi.sock;
+        expires 7d;
+    }
 
-## HackerFire
-Looking for CTF challenges to work on? [HackerFire](https://hackerfire.com/) is a learning focused CTF built using CTFd. It features a wide variety of challenges and is updated with new content frequently. It also contains custom knowledge resources to teach newcomers about the techniques used to solve a challenge.
+    location / {
+        include uwsgi_params;
+        uwsgi_pass unix:/tmp/uwsgi.sock;
+    }
 
-## Credits
- * Logo by [Laura Barbera](http://www.laurabb.com/)
- * Theme by [Christopher Thompson](https://github.com/breadchris)
+    error_page 404 500 502 503 504 /50x.html;
+
+    location = /50x.html {
+        root html;
+    }
+}
+自行修改listen端口，日志输出路径等
+然后重启nginx
+
+6.修改ctfd.ini的参数值，优化uswgi
+
+7.创建名为ctfd_service.sh
+#!/bin/bash
+### BEGIN INIT INFO
+# Provides:          lsp
+# Required-Start:    $local_fs $network
+# Required-Stop:     $local_fs
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: ctfd daemon
+# Description:       ctfd daemon
+### END INIT INFO
+
+cd /home/aotu/CTFd
+uwsgi --ini ctfd.ini
+
+exit 0
+
+8. 添加权限
+sudo chmod +x ctfd_service.sh
+
+9.放在启动目录下
+sudo mv ctfd_service.sh /etc/init.d
+
+10.添加自启动
+cd /etc/init.d/
+sudo update-rc.d ctfd_service.sh defaults 90
+#删除的命令如下
+sudo update-rc.d -f ctfd_service.sh remove
+
+11.启动
+service ctfd_service start | stop | status
+
+Done!
